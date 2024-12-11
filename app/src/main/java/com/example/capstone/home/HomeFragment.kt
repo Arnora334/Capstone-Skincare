@@ -101,17 +101,21 @@ class HomeFragment : Fragment() {
     }
 
     private fun getFilePathFromUri(uri: Uri): String? {
-        val projection = arrayOf(MediaStore.Images.Media.DATA)
-        val cursor = requireContext().contentResolver.query(uri, projection, null, null, null)
-        cursor?.let {
-            it.moveToFirst()
-            val columnIndex = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-            val filePath = it.getString(columnIndex)
-            it.close()
-            return filePath
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val file = createTemporaryFile(requireContext())
+            inputStream?.use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            file.absolutePath
+        } catch (e: Exception) {
+            Log.e("getFilePathFromUri", "Error: ${e.message}")
+            null
         }
-        return null
     }
+
 
     // Fungsi untuk membuka galeri
     private fun openGallery() {
